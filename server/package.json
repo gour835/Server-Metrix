@@ -1,0 +1,20 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/gour835/Server-Metrix#readme",
+  "bugs": {
+    "url": "https://github.com/gour835/Server-Metrix/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gour835/Server-Metrix.git"
+  },
+  "license": "ISC",
+  "author": "gouransh",
+  "type": "module",
+  "main": "main.js",
+  "scripts": {
+    "test": "npm run dev"
+  }
+}
