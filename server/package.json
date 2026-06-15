@@ -15,6 +15,11 @@
   "type": "module",
   "main": "main.js",
   "scripts": {
-    "test": "npm run dev"
+    "dev": "nodemon --env-file=../.env main.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "mongoose": "^9.7.0",
+    "nodemon": "^3.1.14"
   }
 }
