@@ -39,6 +39,6 @@ function start(){
         const payload = getMetrix();
         
         await sendMetrix(payload);
-    },2000);
+    },2500);
 }
 start();

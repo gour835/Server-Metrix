@@ -15,8 +15,22 @@ app.get('/', function(req, res){
     return res.json('hello');
 });
 
-app.post('/api/metrix', function(req, res){
-    console.log(req.body);
+app.post('/api/metrix', async function(req, res){
+    try {
+        //verify the x_api_key from the request
+        const x_api_key = req.body.x_api_key;
+        if(!x_api_key){
+            return res.status(400).json({'success': false, 'message': 'X_Api_Key is required'});
+        }
+        const server =await serverModel.findOne({x_api_key});
+        if (!server) {
+            return res.status(401).json({'success': false, 'message': 'X_Api_Key is not valid'});
+        }
+
+        console.log(req.body.memory);
+    } catch (error: any) {
+        return res.status(500).json({'success': false, message: error.message});
+    }
 });
 
 app.post('/api/metrix/register',async function (req: Request<{}, {}, ServerRequest>, res: Response) {
