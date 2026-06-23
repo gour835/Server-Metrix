@@ -33,6 +33,7 @@ async function sendMetrix(payload:object) {
 }
 
 function start(){
+    //register the server first
     setInterval(async()=>{
         console.log('sending the metrix')
         const payload = getMetrix();

@@ -28,7 +28,7 @@ app.post('/api/metrix/register',async function (req: Request<{}, {}, ServerReque
         }
         const ExistingServer = await serverModel.findOne({Ipv4: req.body.Ipv4});
         if(ExistingServer){
-            return res.status(202).json({'message': 'Server is Already Registered.'})
+            return res.status(202).json({'message': 'Server is Already Registered.', x_api_key: ExistingServer.x_api_key});
         }
         const x_api_key = randomUUID();
     
