@@ -1,6 +1,7 @@
 import express, { type Request, type Response } from 'express';
 import serverModel from './models/server.model.js';
 import { randomUUID } from 'crypto';
+import MongoDb from './config/MongoDb.config.js';
 
 interface ServerRequest {
     Ipv4: string,
@@ -10,6 +11,8 @@ interface ServerRequest {
 
 const app = express();
 app.use(express.json());
+
+MongoDb();
 
 app.get('/', function(req, res){
     return res.json('hello');
@@ -37,7 +40,7 @@ app.post('/api/metrix/register',async function (req: Request<{}, {}, ServerReque
     try {
         //verify that the request is comming from the internal server rather then from everywhere
         const Server_Secret_Key = process.env.SERVER_SECRET_KEY;
-        if (!req.body.SecretKey || (Server_Secret_Key !== req.body.SecretKey)) {
+        if (Server_Secret_Key != req.body.SecretKey) {
             return res.status(400).json({'message' : 'Not Authorised to register this server'})
         }
         const ExistingServer = await serverModel.findOne({Ipv4: req.body.Ipv4});

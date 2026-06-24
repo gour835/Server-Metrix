@@ -1,8 +1,13 @@
 import os from 'os';
 import axios from 'axios';
 
+interface getIPAdress_Return{
+    Ipv4: string| null,
+    Ipv6: string| null,
 
-function getIPAdress() {
+}
+
+function getIPAdress(): getIPAdress_Return {
     const interfaces = os.networkInterfaces();
     let Ipv4: string | null = null;
     let Ipv6: string | null = null;
@@ -15,6 +20,9 @@ function getIPAdress() {
         for (const network of networkInterface) {
             if (network.internal) continue;
 
+            // Break early if we found both
+            if (Ipv4 && Ipv6) break;
+
             // Check for IPv4
             if (network.family === 'IPv4' && !Ipv4) {
                 Ipv4 = network.address;
@@ -24,14 +32,11 @@ function getIPAdress() {
             if (network.family === 'IPv6' && !Ipv6) {
                 Ipv6 = network.address;
             }
-
-            // Break early if we found both
-            if (Ipv4 && Ipv6) break;
         }
     }
-
+    return {Ipv4, Ipv6};
 }
-function getMetrix() {
+function getMetrix() : any{
     const freeMemory = os.freemem();
     const totalMemory = os.totalmem();
     const userMemory = totalMemory - freeMemory;
@@ -61,13 +66,27 @@ async function sendMetrix(payload: object) {
     }
 }
 
-function start() {
-    //register the server first
-    setInterval(async () => {
-        console.log('sending the metrix')
-        const payload = getMetrix();
-
-        await sendMetrix(payload);
-    }, 2500);
+async function start() {
+     //register the server first
+     const {Ipv4, Ipv6} = getIPAdress();
+     const {data, status} = await axios.post('http://localhost:8080/api/metrix/register',{
+         Ipv4,
+         Ipv6,
+         SecretKey: process.env.SERVER_SECRET_KEY
+     }, {withCredentials:true});
+ 
+     if (status === 200 || status ===202) {
+         setInterval(async () => {
+         console.log('sending the metrix')
+         const payload = getMetrix();
+         payload.x_api_key= data.x_api_key;
+         
+         await sendMetrix(payload);
+     }, 2500);
+     }
+     console.log('something went wrong')
+    
 }
 start();
+
+// npx ts-node --env-file=../../.env src/scripts/metrix.ts    
