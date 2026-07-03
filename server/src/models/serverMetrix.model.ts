@@ -2,7 +2,7 @@ import mongoose, {type InferSchemaType} from "mongoose";
 
 const serverMetrixSchema= new mongoose.Schema({
     timeseries:{
-        timeField: 'date',
+        timeField: 'timeStamp',
         metaField: 'ticker',
         granularity:'seconds'
     }
