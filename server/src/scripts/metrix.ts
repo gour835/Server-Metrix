@@ -89,4 +89,5 @@ async function start() {
 }
 start();
 
-// npx ts-node --env-file=../../.env src/scripts/metrix.ts    
+//from server folder
+// npx ts-node --env-file=../.env src/scripts/metrix.ts    
