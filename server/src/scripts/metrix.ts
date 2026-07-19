@@ -94,15 +94,15 @@ async function start() {
         SecretKey: process.env.SERVER_SECRET_KEY
     }, { withCredentials: true });
 
+    setInterval(async () => {
     if (status === 200 || status === 202) {
-        setInterval(async () => {
             console.log('sending the metrix')
             const payload = getMetrix();
             payload.x_api_key = data.x_api_key;
 
             await sendMetrix(payload);
-        }, 2500);
-    }
+        }
+    }, 2500);
     console.log('something went wrong')
 
 }
