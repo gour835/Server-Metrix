@@ -7,6 +7,23 @@ interface getIPAdress_Return {
 
 }
 
+interface getMetrix_Return{
+    x_api_key?: string,
+    timeStamp: string,
+        cpus: {
+            model: string,
+            speed: number,
+            times: { user: number, nice: number, sys: number, idle: number, irq: number }
+            
+        }[],
+        memory: {
+            freeMemory: number,
+            totalMemory: number,
+            userMemory: number,
+            MemoryPercentage: string
+        }
+}
+
 const server_uri : string | undefined= process.env.SERVER_URI;
 
 function getIPAdress(): getIPAdress_Return {
@@ -38,7 +55,7 @@ function getIPAdress(): getIPAdress_Return {
     }
     return { Ipv4, Ipv6 };
 }
-function getMetrix(): any {
+function getMetrix(): getMetrix_Return {
     const freeMemory = os.freemem();
     const totalMemory = os.totalmem();
     const userMemory = totalMemory - freeMemory;
