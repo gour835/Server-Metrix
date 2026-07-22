@@ -2,6 +2,7 @@ import express, { type Request, type Response } from 'express';
 import serverModel from './models/server.model.js';
 import { randomUUID } from 'crypto';
 import MongoDb from './config/MongoDb.config.js';
+import client from './config/Redis.config.js';
 import ServerMetrixModel from './models/serverMetrix.model.js';
 
 interface ServerRequest {
@@ -14,6 +15,7 @@ const app = express();
 app.use(express.json());
 
 MongoDb();
+
 
 app.get('/', function (req, res) {
     return res.json('hello');
@@ -42,6 +44,10 @@ app.post('/api/metrix', async function (req, res) {
                 'ipv4': server.Ipv4
             }
         });
+
+        await client.set('foo', 'bared');
+
+        console.log(await client.get('foo'));
 
         
     } catch (error: any) {
