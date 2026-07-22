@@ -33,9 +33,9 @@ app.post('/api/metrix', async function (req, res) {
             return res.status(401).json({ 'success': false, 'message': 'X_Api_Key is not valid' });
         }
 
-        console.log(req.body.memory);
+        //console.log(req.body.memory);
 
-        await ServerMetrixModel.insertOne({
+        const data = {
             'timeStamp': req.body.timeStamp,
             'memory': req.body.memory,
             'cpus': req.body.cpus,
@@ -43,11 +43,15 @@ app.post('/api/metrix', async function (req, res) {
                 x_api_key,
                 'ipv4': server.Ipv4
             }
-        });
+        }
 
-        await client.set('foo', 'bared');
+        await ServerMetrixModel.insertOne(data);
 
-        console.log(await client.get('foo'));
+        await client.set(`server:metrics:live:${server.Ipv4}`, JSON.stringify(data));
+
+        const redis_data = await client.get(`server:metrics:live:${server.Ipv4}`);
+
+        console.log(redis_data);
 
         
     } catch (error: any) {
