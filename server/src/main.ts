@@ -47,7 +47,9 @@ app.post('/api/metrix', async function (req, res) {
 
         await ServerMetrixModel.insertOne(data);
 
-        await client.set(`server:metrics:live:${server.Ipv4}`, JSON.stringify(data));
+        await client.set(`server:metrics:live:${server.Ipv4}`, JSON.stringify(data),{
+            EX: 15
+        });
 
         const redis_data = await client.get(`server:metrics:live:${server.Ipv4}`);
 
