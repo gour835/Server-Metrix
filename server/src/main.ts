@@ -6,6 +6,7 @@ import { randomUUID } from 'crypto';
 import MongoDb from './config/MongoDb.config.js';
 import client from './config/Redis.config.js';
 import ServerMetrixModel from './models/serverMetrix.model.js';
+import { ques } from './queue.js';
 
 interface ServerRequest {
     Ipv4: string,
@@ -31,8 +32,20 @@ const Speedlimiter = slowDown({
 app.use(Speedlimiter)
 app.use(limiter);
 
-app.get('/', function (req, res) {
-    return res.json('hello');
+
+app.get('/', async function (req, res) {
+    try {
+        const work = await ques.add('test', {
+            email: 'test@gmial.ocm',
+            number: '020934'
+        })
+        return res.json('hello');
+    } catch (error) {
+
+        console.log('Failed to add job to queue:', error);
+        return res.status(500).json({ error: 'Internal server error' });
+
+    }
 });
 
 app.post('/api/metrix', async function (req, res) {
@@ -47,8 +60,6 @@ app.post('/api/metrix', async function (req, res) {
             return res.status(401).json({ 'success': false, 'message': 'X_Api_Key is not valid' });
         }
 
-        //console.log(req.body.memory);
-
         const data = {
             'timeStamp': req.body.timeStamp,
             'memory': req.body.memory,
@@ -61,7 +72,7 @@ app.post('/api/metrix', async function (req, res) {
 
         await ServerMetrixModel.insertOne(data);
 
-        await client.set(`server:metrics:live:${server.Ipv4}`, JSON.stringify(data),{
+        await client.set(`server:metrics:live:${server.Ipv4}`, JSON.stringify(data), {
             EX: 15
         });
 
@@ -69,7 +80,7 @@ app.post('/api/metrix', async function (req, res) {
 
         console.log(redis_data);
 
-        
+
     } catch (error: any) {
         return res.status(500).json({ 'success': false, message: error.message });
     }
@@ -101,7 +112,7 @@ app.post('/api/show-metrix', async function (req, res) {
 
         await ServerMetrixModel.insertOne(data);
 
-        await client.set(`server:metrics:live:${server.Ipv4}`, JSON.stringify(data),{
+        await client.set(`server:metrics:live:${server.Ipv4}`, JSON.stringify(data), {
             EX: 15
         });
 
@@ -109,7 +120,7 @@ app.post('/api/show-metrix', async function (req, res) {
 
         console.log(redis_data);
 
-        
+
     } catch (error: any) {
         return res.status(500).json({ 'success': false, message: error.message });
     }
