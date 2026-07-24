@@ -1,4 +1,6 @@
 import express, { type Request, type Response } from 'express';
+import rateLimit from 'express-rate-limit';
+import slowDown from 'express-slow-down';
 import serverModel from './models/server.model.js';
 import { randomUUID } from 'crypto';
 import MongoDb from './config/MongoDb.config.js';
@@ -16,12 +18,64 @@ app.use(express.json());
 
 MongoDb();
 
+const limiter = rateLimit({
+    windowMs: 2 * 60 * 100,
+    max: 10
+});
+const Speedlimiter = slowDown({
+    windowMs: 2 * 60 * 100,
+    delayAfter: 3,
+    delayMs: () => 2000
+});
+
+app.use(Speedlimiter)
+app.use(limiter);
 
 app.get('/', function (req, res) {
     return res.json('hello');
 });
 
 app.post('/api/metrix', async function (req, res) {
+    try {
+        //verify the x_api_key from the request
+        const x_api_key = req.body.x_api_key;
+        if (!x_api_key) {
+            return res.status(400).json({ 'success': false, 'message': 'X_Api_Key is required' });
+        }
+        const server = await serverModel.findOne({ x_api_key });
+        if (!server) {
+            return res.status(401).json({ 'success': false, 'message': 'X_Api_Key is not valid' });
+        }
+
+        //console.log(req.body.memory);
+
+        const data = {
+            'timeStamp': req.body.timeStamp,
+            'memory': req.body.memory,
+            'cpus': req.body.cpus,
+            'metadata': {
+                x_api_key,
+                'ipv4': server.Ipv4
+            }
+        }
+
+        await ServerMetrixModel.insertOne(data);
+
+        await client.set(`server:metrics:live:${server.Ipv4}`, JSON.stringify(data),{
+            EX: 15
+        });
+
+        const redis_data = await client.get(`server:metrics:live:${server.Ipv4}`);
+
+        console.log(redis_data);
+
+        
+    } catch (error: any) {
+        return res.status(500).json({ 'success': false, message: error.message });
+    }
+});
+
+app.post('/api/show-metrix', async function (req, res) {
     try {
         //verify the x_api_key from the request
         const x_api_key = req.body.x_api_key;
