@@ -6,12 +6,17 @@ import { randomUUID } from 'crypto';
 import MongoDb from './config/MongoDb.config.js';
 import client from './config/Redis.config.js';
 import ServerMetrixModel from './models/serverMetrix.model.js';
-import { ques } from './queue.js';
+import { SendMetrixs } from './queue.js';
 
 interface ServerRequest {
     Ipv4: string,
     Ipv6?: string,
     SecretKey: string
+}
+
+interface ServerMetrixData{
+    Ipv4: string,
+    x_api_key: string
 }
 
 const app = express();
@@ -35,7 +40,7 @@ app.use(limiter);
 
 app.get('/', async function (req, res) {
     try {
-        const work = await ques.add('test', {
+        const work = await SendMetrixs.add('test', {
             email: 'test@gmial.ocm',
             number: '020934'
         })
@@ -98,29 +103,18 @@ app.post('/api/show-metrix', async function (req, res) {
             return res.status(401).json({ 'success': false, 'message': 'X_Api_Key is not valid' });
         }
 
-        //console.log(req.body.memory);
+        const metadata = {
+            x_api_key: server.x_api_key,
+            Ipv4: server.Ipv4
+        };
+        await ServerMetrixModel.findOne({metadata: metadata});
 
-        const data = {
-            'timeStamp': req.body.timeStamp,
-            'memory': req.body.memory,
-            'cpus': req.body.cpus,
-            'metadata': {
-                x_api_key,
-                'ipv4': server.Ipv4
-            }
+        const data= await ServerMetrixModel.findOne({metadata: metadata}) as ServerMetrixData | null;
+        if(data && data.Ipv4 && data.x_api_key){
+            return res.status(200).json(data);
         }
 
-        await ServerMetrixModel.insertOne(data);
-
-        await client.set(`server:metrics:live:${server.Ipv4}`, JSON.stringify(data), {
-            EX: 15
-        });
-
-        const redis_data = await client.get(`server:metrics:live:${server.Ipv4}`);
-
-        console.log(redis_data);
-
-
+        return res.status(404).json({ 'success': false, 'message': 'No data found ' })
     } catch (error: any) {
         return res.status(500).json({ 'success': false, message: error.message });
     }
