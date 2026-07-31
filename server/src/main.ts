@@ -6,7 +6,7 @@ import { randomUUID } from 'crypto';
 import MongoDb from './config/MongoDb.config.js';
 import client from './config/Redis.config.js';
 import ServerMetrixModel from './models/serverMetrix.model.js';
-import { SendMetrixs } from './queue.js';
+import { SaveMetrixs } from './queue.js';
 
 interface ServerRequest {
     Ipv4: string,
@@ -40,14 +40,8 @@ app.use(limiter);
 
 app.get('/', async function (req, res) {
     try {
-        const work = await SendMetrixs.add('test', {
-            email: 'test@gmial.ocm',
-            number: '020934'
-        })
         return res.json('hello');
     } catch (error) {
-
-        console.log('Failed to add job to queue:', error);
         return res.status(500).json({ error: 'Internal server error' });
 
     }
@@ -74,17 +68,37 @@ app.post('/api/metrix', async function (req, res) {
                 'ipv4': server.Ipv4
             }
         }
+        const work = await SaveMetrixs.add('test', {
+           data, server
+        })
+        return res.status(200).json({'success': true , jobID: work.id})
 
-        await ServerMetrixModel.insertOne(data);
+    } catch (error: any) {
+        return res.status(500).json({ 'success': false, message: error.message });
+    }
+});
+app.post('/api/metrix/status', async function (req, res) {
+    try {
+        const job = await SaveMetrixs.getJob(req.body.jobID);
 
-        await client.set(`server:metrics:live:${server.Ipv4}`, JSON.stringify(data), {
-            EX: 15
-        });
+        if(!job){
+            return res.status(404).json({'message': 'Job not found'});
+        }
 
-        const redis_data = await client.get(`server:metrics:live:${server.Ipv4}`);
+        const state = await job.getState();
 
-        console.log(redis_data);
+        if (state === 'completed') {
+            // job.returnvalue contains the { success: true } returned by the worker
+            return res.status(200).json({ 'success': true, message: job.returnvalue });
+        }
+        
+        if (state === 'failed') {
+            return res.status(400).json({ success: false , message: job.failedReason });
+        }
 
+        // If it's still 'waiting' or 'active' (processing)
+        // return res.json({ status: state });
+        return res.status(200).json({ success: false , message: state })
 
     } catch (error: any) {
         return res.status(500).json({ 'success': false, message: error.message });

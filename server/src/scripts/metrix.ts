@@ -24,6 +24,10 @@ interface getMetrix_Return{
         }
 }
 
+interface ServerResponse{
+    jobID: string
+}
+
 const server_uri : string | undefined= process.env.SERVER_URI;
 
 function getIPAdress(): getIPAdress_Return {
@@ -78,10 +82,26 @@ function getMetrix(): getMetrix_Return {
 
 async function sendMetrix(payload: object) {
     try {
-        const server = await axios.post(`${server_uri}/api/metrix`, payload, { withCredentials: true });
-        console.log(`[${new Date().toLocaleTimeString()}] Metrics successfully transmitted. Server responded with status: ${server.status}`);
+        const {data} = await axios.post(`${server_uri}/api/metrix`, payload, { withCredentials: true });
+        const status = await metrixStatus(data.jobID);
+        if(status){
+            console.log('sendMetrix',status.message);
+        }
     } catch (error: any) {
-        console.log(error.message);
+        console.log('sendMetrix-error',error.message);
+    }
+}
+
+async function metrixStatus(jobID: string) {
+    try {
+        //checking the status from the server
+        const {data, status} = await axios.post(`${server_uri}/api/metrix/status`,{jobID}, {withCredentials: true});
+        if(status === 200){
+            return {success: true, message: 'successfully retrived the job details'};
+        }
+        return {success: false, message: data.message};
+    } catch (error: any) {
+        console.log('metrixStatus-error',error.message);
     }
 }
 
@@ -103,8 +123,6 @@ async function start() {
             await sendMetrix(payload);
         }
     }, 2500);
-    console.log('something went wrong')
-
 }
 start();
 

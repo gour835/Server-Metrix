@@ -1,5 +1,7 @@
 import { Worker, Job, Queue } from "bullmq";
 import { Redis } from 'ioredis';
+import ServerMetrixModel from "./models/serverMetrix.model.js";
+import client from "./config/Redis.config.js";
 
 
 
@@ -16,16 +18,25 @@ const connection = new Redis({
   maxRetriesPerRequest: null 
 });
 
-export const SendMetrixs = new Queue('SendMetrixs', {connection});
+export const SaveMetrixs = new Queue('SaveMetrixs', {connection});
 
-const worker = new Worker('SendMetrixs', async(job: Job)=>{
-    console.log(`Job with id: ${job.id}, started for ${job.data.email}`);
-    //heavy task
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-    console.log('Heavy task completed inside promise wrapper');
+const worker = new Worker('SaveMetrixs', async(job: Job)=>{
+    console.log(`Job with id: ${job.id} started`);
 
+    const data = job.data.data;
+    const server = job.data.server
+    
+    await ServerMetrixModel.insertOne(data);
+
+        await client.set(`server:metrics:live:${server.Ipv4}`, JSON.stringify(data), {
+            EX: 15
+        });
+
+        const redis_data = await client.get(`server:metrics:live:${server.Ipv4}`);
+
+        console.log(redis_data);
     console.log(`Job with id: ${job.id} completed`);
-    return ({success: true});
+    return ({success: true, jobID: job.id});
 }, {connection});
 
 worker.on('failed', (job, err) => {
