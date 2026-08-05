@@ -1,14 +1,20 @@
+
 import './App.css'
-import Dashboard from './Dashboard'
+import { ChartExample } from './components/example-charts'
 
 function App() {
-
+  
 
   return (
     <>
-      <Dashboard />
+      <h1 className='text-zinc-950 text-4xl'>
+        Hello React
+      </h1>
+      <div className='w-125 h-125 '>
+      <ChartExample/>
+      </div>
     </>
-      )
+  )
 }
 
 export default App
