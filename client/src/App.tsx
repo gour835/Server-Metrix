@@ -1,24 +1,45 @@
 
 import './App.css'
-import { ChartExample } from './components/example-charts'
-import Layout from './layout'
+import { AppSidebar } from './components/app-sidebar'
+import { ChartAreaInteractive } from './components/chart-area-interactive'
+import { DataTable } from './components/data-table'
+import { SectionCards } from './components/section-cards'
+import { SiteHeader } from './components/site-header'
+import { SidebarProvider, SidebarInset } from './components/ui/sidebar'
+import { TooltipProvider } from './components/ui/tooltip'
+import data from '../data.json'
+
 
 function App() {
   
 
   return (
-    <>
-    <Layout>
-      <div className="flex flex-col gap-4 p-4">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        
-        {/* Your chart container */}
-        <div className="w-full max-w-2xl rounded-xl border p-4 shadow-sm">
-          <ChartExample />
+   <TooltipProvider>
+      <SidebarProvider
+      style={
+        {
+          "--sidebar-width": "calc(var(--spacing) * 72)",
+          "--header-height": "calc(var(--spacing) * 12)",
+        } as React.CSSProperties
+      }
+    >
+      <AppSidebar variant="inset" />
+      <SidebarInset>
+        <SiteHeader />
+        <div className="flex flex-1 flex-col">
+          <div className="@container/main flex flex-1 flex-col gap-2">
+            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+              <SectionCards />
+              <div className="px-4 lg:px-6">
+                <ChartAreaInteractive />
+              </div>
+              <DataTable data={data} />
+            </div>
+          </div>
         </div>
-      </div>
-    </Layout>
-    </>
+      </SidebarInset>
+    </SidebarProvider>
+    </TooltipProvider>
   )
 }
 
