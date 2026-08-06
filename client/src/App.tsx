@@ -9,9 +9,15 @@ import { SidebarProvider, SidebarInset } from './components/ui/sidebar'
 import { TooltipProvider } from './components/ui/tooltip'
 import data from '../data.json'
 import { ThemeProvider } from './components/theme-provider'
+import { useState } from 'react'
 
 
 function App() {
+
+  const [ServerRam, setServerRam] = useState([{}]);
+  console.log(ServerRam);
+  
+  
 
 
   return (
