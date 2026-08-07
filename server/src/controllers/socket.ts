@@ -20,7 +20,7 @@ export default function socketWork(
     Data: Record<string, any> = {
         message: "Data received successfully!"      
     },
-    CompleteAction = completeAction
+    CompleteAction :(data: any) => void= completeAction
 ) {
     io.on("connection", (socket) => {
         if (Action == 'on') {

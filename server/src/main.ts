@@ -7,6 +7,9 @@ import MongoDb from './config/MongoDb.config.js';
 import client from './config/Redis.config.js';
 import ServerMetrixModel from './models/serverMetrix.model.js';
 import { SaveMetrixs } from './queue.js';
+import { createServer } from 'http';
+import { Server, Socket } from 'socket.io';
+import socketWork, { socketEmitHandler, socketReceiveHandler } from './controllers/socket.js';
 
 interface ServerRequest {
     Ipv4: string,
@@ -14,7 +17,7 @@ interface ServerRequest {
     SecretKey: string
 }
 
-interface ServerMetrixData{
+interface ServerMetrixData {
     Ipv4: string,
     x_api_key: string
 }
@@ -37,6 +40,27 @@ const Speedlimiter = slowDown({
 app.use(Speedlimiter)
 app.use(limiter);
 
+
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+    cors: {
+    origin: "*", // Or "http://localhost:3000" (your frontend URL)
+    methods: ["GET", "POST"]
+  }});
+socketWork(io, 'test', 'on');
+socketWork(io, 'welcome', 'emit', { msg: 'Welcome to the server!' });
+
+io.on("connection", (socket:Socket) => {
+  console.log(`Socket connected: ${socket.id}`);
+
+  // Attach handlers to THIS specific client's socket
+  socketReceiveHandler(socket);
+  socketEmitHandler(socket, { ram: "16GB" });
+
+  socket.on("disconnect", () => {
+    console.log(`Socket disconnected: ${socket.id}`);
+  });
+});
 
 app.get('/', async function (req, res) {
     try {
@@ -68,10 +92,11 @@ app.post('/api/metrix', async function (req, res) {
                 'ipv4': server.Ipv4
             }
         }
+        io.emit('ram', { ram: req.body.memory.userMemory });
         const work = await SaveMetrixs.add('test', {
-           data, server
+            data, server
         })
-        return res.status(200).json({'success': true , jobID: work.id})
+        return res.status(200).json({ 'success': true, jobID: work.id })
 
     } catch (error: any) {
         return res.status(500).json({ 'success': false, message: error.message });
@@ -81,8 +106,8 @@ app.post('/api/metrix/status', async function (req, res) {
     try {
         const job = await SaveMetrixs.getJob(req.body.jobID);
 
-        if(!job){
-            return res.status(404).json({'message': 'Job not found'});
+        if (!job) {
+            return res.status(404).json({ 'message': 'Job not found' });
         }
 
         const state = await job.getState();
@@ -91,14 +116,14 @@ app.post('/api/metrix/status', async function (req, res) {
             // job.returnvalue contains the { success: true } returned by the worker
             return res.status(200).json({ 'success': true, message: job.returnvalue });
         }
-        
+
         if (state === 'failed') {
-            return res.status(400).json({ success: false , message: job.failedReason });
+            return res.status(400).json({ success: false, message: job.failedReason });
         }
 
         // If it's still 'waiting' or 'active' (processing)
         // return res.json({ status: state });
-        return res.status(200).json({ success: false , message: state })
+        return res.status(200).json({ success: false, message: state })
 
     } catch (error: any) {
         return res.status(500).json({ 'success': false, message: error.message });
@@ -121,10 +146,10 @@ app.post('/api/show-metrix', async function (req, res) {
             x_api_key: server.x_api_key,
             Ipv4: server.Ipv4
         };
-        await ServerMetrixModel.findOne({metadata: metadata});
+        await ServerMetrixModel.findOne({ metadata: metadata });
 
-        const data= await ServerMetrixModel.findOne({metadata: metadata}) as ServerMetrixData | null;
-        if(data && data.Ipv4 && data.x_api_key){
+        const data = await ServerMetrixModel.findOne({ metadata: metadata }) as ServerMetrixData | null;
+        if (data && data.Ipv4 && data.x_api_key) {
             return res.status(200).json(data);
         }
 
@@ -163,6 +188,9 @@ app.post('/api/metrix/register', async function (req: Request<{}, {}, ServerRequ
 
 });
 
-app.listen(8080, function () {
+
+
+
+httpServer.listen(8080, function () {
     console.log('server started on port 8080', 'http://localhost:8080/');
 })
