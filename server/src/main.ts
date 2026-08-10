@@ -92,7 +92,8 @@ app.post('/api/metrix', async function (req, res) {
                 'ipv4': server.Ipv4
             }
         }
-        io.emit('ram', { ram: req.body.memory.userMemory });
+        io.emit('ram', { ram: req.body.memory.userMemory, cpu: req.body.cpus });
+
         const work = await SaveMetrixs.add('test', {
             data, server
         })
