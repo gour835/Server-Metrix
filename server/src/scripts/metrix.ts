@@ -10,6 +10,7 @@ interface getIPAdress_Return {
 interface getMetrix_Return{
     x_api_key?: string,
     timeStamp: string,
+    cpuUsage: number,
         cpus: {
             model: string,
             speed: number,
@@ -64,12 +65,28 @@ function getMetrix(): getMetrix_Return {
     const totalMemory = os.totalmem();
     const userMemory = totalMemory - freeMemory;
     const MemoryPercentage = ((userMemory / totalMemory) * 100).toFixed(3);
+
+    const cpuUsage = os.cpus().map((cpu) => {
+        const { user, nice, sys, idle, irq } = cpu.times;
+
+        const total = user + nice + sys + idle + irq;
+        const busy = total - idle;
+
+        return (busy / total) * 100;
+    });
+
+    const averageCpuUsage =
+        cpuUsage.reduce((sum, usage) => sum + usage, 0) / cpuUsage.length;
+
+    
     return {
         timeStamp: new Date().toISOString(),
+        cpuUsage: Number(averageCpuUsage.toFixed(2)),
         cpus: os.cpus().map((cpu) => ({
             model: cpu.model,
             speed: cpu.speed,
             times: cpu.times
+            
         })),
         memory: {
             freeMemory,

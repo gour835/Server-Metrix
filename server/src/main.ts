@@ -55,7 +55,6 @@ io.on("connection", (socket:Socket) => {
 
   // Attach handlers to THIS specific client's socket
   socketReceiveHandler(socket);
-  socketEmitHandler(socket, { ram: "16GB" });
 
   socket.on("disconnect", () => {
     console.log(`Socket disconnected: ${socket.id}`);
@@ -92,7 +91,7 @@ app.post('/api/metrix', async function (req, res) {
                 'ipv4': server.Ipv4
             }
         }
-        io.emit('ram', { ram: req.body.memory.userMemory, cpu: req.body.cpus });
+        io.emit('ram', { ram: req.body.memory.MemoryPercentage, cpu: req.body.cpuUsage });
 
         const work = await SaveMetrixs.add('test', {
             data, server

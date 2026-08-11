@@ -9,24 +9,10 @@ import { SidebarProvider, SidebarInset } from './components/ui/sidebar'
 import { TooltipProvider } from './components/ui/tooltip'
 import data from '../data.json'
 import { ThemeProvider } from './components/theme-provider'
-import { useEffect, useState } from 'react'
-import { socket } from './socket'
 
 
 
 function App() {
-
-  const [ServerRam, setServerRam] = useState([{}]);
-  console.log(ServerRam);
-  
-  useEffect(()=>{
-    socket.emit('test', {'hello': 200});
-  }, []);
-
-  socket.on('ram', (data)=>{
-    console.log('ram socket received: ', data);
-  })
-  
 
 
   return (
