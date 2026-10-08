@@ -136,6 +136,7 @@ async function start() {
             console.log('sending the metrix')
             const payload = getMetrix();
             payload.x_api_key = data.x_api_key;
+            console.log('api',data.x_api_key);
 
             await sendMetrix(payload);
         }
